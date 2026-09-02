@@ -1,0 +1,36 @@
+# 依赖
+node_modules/
+.DS_Store
+
+# 构建产物
+dist/
+dist/build/
+unpackage/
+.output/
+
+# Go 编译产物
+service_api/activity
+service_api/activity.exe
+service_api/bin/
+
+# 运行时数据（日志、上传、缓存）
+runtime/
+uploads/
+*.log
+
+config/config.yaml
+config/config.verify.yaml
+
+
+# 环境变量与本地配置
+.env.local
+.env.*.local
+config/config.prod.yaml
+config/config.local.yaml
+.env.development
+.env.production
+
+# 编辑器
+.idea/
+.vscode/
+*.swp
