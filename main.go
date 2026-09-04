@@ -1,5 +1,3 @@
-// 活动报名工具服务端入口：Golang + Gin + MySQL
-// 启动示例：go run . -c config/config.yaml
 package main
 
 import (
@@ -44,7 +42,6 @@ func main() {
 		logger.Errorf("数据库初始化失败：%v", err)
 		os.Exit(1)
 	}
-	// 初始化超级管理员与系统配置
 	service.EnsureSuperAdmin()
 	service.EnsureDefaultConfig()
 
@@ -65,7 +62,6 @@ func main() {
 		}
 	}()
 
-	// 优雅退出：等待中断信号后最多 10 秒完成在途请求
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
@@ -76,4 +72,5 @@ func main() {
 		logger.Errorf("服务关闭异常：%v", err)
 	}
 	logger.Info("服务已安全退出")
+
 }

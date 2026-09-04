@@ -2,13 +2,11 @@ package model
 
 import "time"
 
-// 管理员角色
 const (
-	AdminRoleSuper int8 = 1 // 超级管理员
-	AdminRoleSub   int8 = 2 // 子管理员
+	AdminRoleSuper int8 = 1
+	AdminRoleSub   int8 = 2
 )
 
-// Admin PC 管理端账号表
 type Admin struct {
 	BaseModel
 	Username      string     `gorm:"column:username;type:varchar(64);uniqueIndex:uk_admin_username;not null;comment:登录账号" json:"username"`
@@ -22,10 +20,8 @@ type Admin struct {
 	LastLoginIP   string     `gorm:"column:last_login_ip;type:varchar(64);comment:最近登录IP" json:"last_login_ip"`
 }
 
-// TableName 数据表名
 func (Admin) TableName() string { return "admin" }
 
-// SysConfig 系统配置表（键值对）
 type SysConfig struct {
 	BaseModel
 	ConfigKey   string `gorm:"column:config_key;type:varchar(64);uniqueIndex:uk_config_key;not null;comment:配置键" json:"config_key"`
@@ -33,10 +29,8 @@ type SysConfig struct {
 	Remark      string `gorm:"column:remark;type:varchar(255);comment:配置说明" json:"remark"`
 }
 
-// TableName 数据表名
 func (SysConfig) TableName() string { return "sys_config" }
 
-// OperationLog 后台操作日志表
 type OperationLog struct {
 	BaseModel
 	AdminID   int64  `gorm:"column:admin_id;type:bigint;index:idx_log_admin;comment:操作人ID" json:"admin_id"`
@@ -47,5 +41,4 @@ type OperationLog struct {
 	IP        string `gorm:"column:ip;type:varchar(64);comment:操作IP" json:"ip"`
 }
 
-// TableName 数据表名
 func (OperationLog) TableName() string { return "operation_log" }

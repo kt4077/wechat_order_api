@@ -1,9 +1,7 @@
-// Package dto 定义接口层请求与响应数据结构，隔离数据库实体与外部协议。
 package dto
 
 import "activity/internal/model"
 
-// ActivitySaveReq 活动新增/编辑请求
 type ActivitySaveReq struct {
 	ID            int64             `json:"id"`
 	Title         string            `json:"title"`
@@ -32,20 +30,18 @@ type ActivitySaveReq struct {
 	FormConfig    []model.FormField `json:"form_config"`
 }
 
-// ActivityQuery 活动列表查询参数
 type ActivityQuery struct {
 	Page     int    `json:"page" form:"page"`
 	PageSize int    `json:"page_size" form:"page_size"`
 	Keyword  string `json:"keyword" form:"keyword"`
 	Category string `json:"category" form:"category"`
 	Type     int    `json:"type" form:"type"`
-	Status   string `json:"status" form:"status"` // signing / notstart / ended / draft / offline / all
+	Status   string `json:"status" form:"status"`
 	Official int    `json:"official" form:"official"`
-	Scope    string `json:"scope" form:"scope"` // mine：只看自己创建的活动
+	Scope    string `json:"scope" form:"scope"`
 	UserID   int64  `json:"-" form:"-"`
 }
 
-// ActivityListItem 活动列表项
 type ActivityListItem struct {
 	ID            int64   `json:"id"`
 	Title         string  `json:"title"`
@@ -78,7 +74,6 @@ type ActivityListItem struct {
 	CreateTime    string  `json:"create_time"`
 }
 
-// ActivityDetail 活动详情
 type ActivityDetail struct {
 	ActivityListItem
 	Description string            `json:"description"`
@@ -93,21 +88,18 @@ type ActivityDetail struct {
 	CanManage   bool              `json:"can_manage"`
 }
 
-// ActivityStatusReq 活动状态变更请求（上架/下架/发布）
 type ActivityStatusReq struct {
 	ID     int64  `json:"id"`
 	Status int8   `json:"status"`
 	Remark string `json:"remark"`
 }
 
-// ActivityAuditReq 活动审核请求
 type ActivityAuditReq struct {
 	ID     int64  `json:"id"`
-	Status int8   `json:"status"` // 1 通过 2 驳回（对应 dto.AuditActionXxx）
-	Remark string `json:"remark"` // 驳回原因，驳回时必填
+	Status int8   `json:"status"`
+	Remark string `json:"remark"`
 }
 
-// ActivityCopyReq 活动复刻请求
 type ActivityCopyReq struct {
 	ID int64 `json:"id"`
 }

@@ -1,4 +1,3 @@
-// Package model 定义数据库实体与连接管理。所有业务表均包含 id / create_time / update_time / delete_time 通用字段。
 package model
 
 import (
@@ -13,7 +12,6 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-// BaseModel 数据库表通用字段，删除统一采用软删除
 type BaseModel struct {
 	ID         int64          `gorm:"primaryKey;autoIncrement;column:id" json:"id"`
 	CreateTime time.Time      `gorm:"column:create_time;autoCreateTime;index" json:"create_time"`
@@ -21,10 +19,8 @@ type BaseModel struct {
 	DeleteTime gorm.DeletedAt `gorm:"column:delete_time;index" json:"-"`
 }
 
-// DB 全局数据库句柄
 var DB *gorm.DB
 
-// Init 初始化数据库连接并执行自动迁移
 func Init(cfg *config.Config) error {
 	var level glogger.LogLevel
 	switch cfg.Database.LogLevel {
@@ -72,7 +68,6 @@ func Init(cfg *config.Config) error {
 	return nil
 }
 
-// AutoMigrate 自动建表并创建必要的索引
 func AutoMigrate() error {
 	err := DB.Set("gorm:table_options", "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='业务表'").AutoMigrate(
 		&User{},
@@ -90,7 +85,6 @@ func AutoMigrate() error {
 	return ensureExtraIndex()
 }
 
-// ensureExtraIndex 补充 AutoMigrate 未覆盖的复合索引
 func ensureExtraIndex() error {
 	type index struct {
 		table string
@@ -124,10 +118,8 @@ func pkgLogWarn(err error) {
 	logger.Warnf("创建索引跳过：%v", err)
 }
 
-// TimeFormat 统一时间输出格式
 const TimeFormat = "2006-01-02 15:04:05"
 
-// FmtTime 将时间指针格式化为字符串，nil 返回空串
 func FmtTime(t *time.Time) string {
 	if t == nil || t.IsZero() {
 		return ""
@@ -135,7 +127,6 @@ func FmtTime(t *time.Time) string {
 	return t.Format(TimeFormat)
 }
 
-// FmtTimeValue 将时间值格式化为字符串
 func FmtTimeValue(t time.Time) string {
 	if t.IsZero() {
 		return ""

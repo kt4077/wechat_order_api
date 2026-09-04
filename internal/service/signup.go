@@ -16,7 +16,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// SignupStatusText 报名状态文案
 func SignupStatusText(status int8) string {
 	switch status {
 	case model.SignupStatusPending:
@@ -32,7 +31,6 @@ func SignupStatusText(status int8) string {
 	}
 }
 
-// SubmitSignup 提交报名。方法内使用事务加行锁，保证名额不超卖、单人单活动仅一次。
 func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int64, error) {
 	if req.ActivityID <= 0 {
 		return 0, errcode.ErrParams.WithMsg("参数错误")
@@ -44,7 +42,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 	if user.Status == model.UserStatusDisable {
 		return 0, errcode.ErrForbid.WithMsg("账号已被禁用，无法报名")
 	}
-	// 预约到场时间：报名者自行填写（选填）
 	var appointTime *time.Time
 	if validate.Trim(req.AppointTime) != "" {
 		t, ok := validate.ParseTime(req.AppointTime)
@@ -56,7 +53,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 
 	var signupID int64
 	txErr := model.DB.Transaction(func(tx *gorm.DB) error {
-		// 行锁防止并发超卖
 		a := &model.Activity{}
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ?", req.ActivityID).First(a).Error; err != nil {
 			return errcode.ErrNotFound.WithMsg("活动不存在")
@@ -79,7 +75,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 		if RemainQuota(a.Quota, a.SignedCount) == 0 {
 			return errcode.ErrNoQuota
 		}
-		// 驳回记录允许重新报名：先归档为已撤销，保证同一时间仅存在一条有效记录
 		now := nowTime()
 		if err := tx.Model(&model.Signup{}).
 			Where("activity_id = ? AND user_id = ? AND status = ?", a.ID, userID, model.SignupStatusRejected).
@@ -87,7 +82,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 			return errcode.ErrSystem.WithMsg("归档历史报名记录失败")
 		}
 
-		// 重复报名校验：待审核与已通过的记录占用名额，禁止重复提交
 		var existCount int64
 		if err := tx.Model(&model.Signup{}).
 			Where("activity_id = ? AND user_id = ? AND status <> ?", a.ID, userID, model.SignupStatusCanceled).
@@ -134,7 +128,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 		}
 		signupID = signup.ID
 
-		// 名额预警（在事务外处理，此处仅记录快照）
 		a.SignedCount++
 		go QuotaWarnCheck(a)
 		return nil
@@ -143,7 +136,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 		return 0, txErr
 	}
 
-	// 报名提交成功通知
 	_ = SendMessage(userID, model.MsgTypeSignup, "报名提交成功",
 		"您已成功提交报名，请耐心等待主办方审核。", req.ActivityID)
 	PushSubscribe(user.Openid, config.Get().Wechat.TmplSignupSubmit, wechat.SubscribeData{
@@ -153,7 +145,6 @@ func SubmitSignup(userID int64, req *dto.SignupSubmitReq, clientIP string) (int6
 	return signupID, nil
 }
 
-// ListSignups 报名记录列表，支持「我的报名」与「活动报名管理」两种场景
 func ListSignups(q *dto.SignupQuery, isAdmin bool) ([]dto.SignupListItem, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.Signup{})
@@ -185,11 +176,9 @@ func ListSignups(q *dto.SignupQuery, isAdmin bool) ([]dto.SignupListItem, int64,
 	return items, total, nil
 }
 
-// BuildSignupItem 组装报名列表项，脱敏开关控制手机号展示
 func BuildSignupItem(s *model.Signup, showFull bool) *dto.SignupListItem {
 	data := ParseFormData(s.FormData)
 	if !showFull {
-		// 非管理场景对隐私字段脱敏
 		data = maskPrivacy(data)
 	}
 	return &dto.SignupListItem{
@@ -216,7 +205,6 @@ func BuildSignupItem(s *model.Signup, showFull bool) *dto.SignupListItem {
 	}
 }
 
-// maskPrivacy 对表单数据中的隐私字段做脱敏处理
 func maskPrivacy(data map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{}, len(data))
 	for key, val := range data {
@@ -233,7 +221,6 @@ func maskPrivacy(data map[string]interface{}) map[string]interface{} {
 	return result
 }
 
-// SignupDetail 报名详情
 func SignupDetail(id, userID int64, isAdmin bool) (*dto.SignupDetail, error) {
 	s := &model.Signup{}
 	if err := model.DB.Where("id = ?", id).First(s).Error; err != nil {
@@ -255,8 +242,6 @@ func SignupDetail(id, userID int64, isAdmin bool) (*dto.SignupDetail, error) {
 	return detail, nil
 }
 
-// CancelSignup 取消报名：待审核与已通过均可取消，取消后释放名额。
-// 已通过报名被取消时，同步扣减活动通过人数 pass_count。
 func CancelSignup(userID, id int64) error {
 	err := model.DB.Transaction(func(tx *gorm.DB) error {
 		s := &model.Signup{}
@@ -296,8 +281,6 @@ func CancelSignup(userID, id int64) error {
 	return nil
 }
 
-// AuditSignup 审核报名：通过或驳回，并同步名额统计。
-// 入参 req.Status 为「审核动作」（1通过 / 2驳回），内部映射为存储状态。
 func AuditSignup(operatorID int64, operatorName string, isAdmin bool, req *dto.SignupAuditReq) error {
 	if req.Status != dto.AuditActionPass && req.Status != dto.AuditActionReject {
 		return errcode.ErrParams.WithMsg("审核状态不合法")
@@ -305,7 +288,6 @@ func AuditSignup(operatorID int64, operatorName string, isAdmin bool, req *dto.S
 	if req.Status == dto.AuditActionReject && validate.Trim(req.Remark) == "" {
 		return errcode.ErrParams.WithMsg("驳回时请填写驳回原因")
 	}
-	// 动作 → 存储状态
 	targetStatus := model.SignupStatusApproved
 	if req.Status == dto.AuditActionReject {
 		targetStatus = model.SignupStatusRejected
@@ -360,7 +342,6 @@ func AuditSignup(operatorID int64, operatorName string, isAdmin bool, req *dto.S
 	return nil
 }
 
-// BatchAuditSignups 批量审核报名
 func BatchAuditSignups(operatorID int64, operatorName string, isAdmin bool, req *dto.SignupBatchAuditReq) (int, error) {
 	if len(req.IDs) == 0 {
 		return 0, errcode.ErrParams.WithMsg("请选择要审核的记录")
@@ -383,7 +364,6 @@ func BatchAuditSignups(operatorID int64, operatorName string, isAdmin bool, req 
 	return success, firstErr
 }
 
-// notifySignupAuditResult 报名审核结果通知（站内消息 + 微信订阅消息）
 func notifySignupAuditResult(s *model.Signup, operatorName string) {
 	if s == nil {
 		return
@@ -417,7 +397,6 @@ func strDefault(s, def string) string {
 	return s
 }
 
-// cutThing 微信订阅消息 thing 类型最多 20 个字符
 func cutThing(s string) string {
 	runes := []rune(s)
 	if len(runes) > 20 {
@@ -429,7 +408,6 @@ func cutThing(s string) string {
 	return s
 }
 
-// getActivityTitle 查询活动标题，失败返回默认文案
 func getActivityTitle(id int64) string {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", id).First(a).Error; err != nil {

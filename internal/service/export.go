@@ -12,8 +12,6 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// ExportSignups 导出活动报名数据为 Excel 文件字节流。
-// 表头由固定列 + 活动自定义表单字段动态拼接，保证导出内容与表单配置一一对应。
 func ExportSignups(activityID int64, status int, creatorID int64, isAdmin bool) ([]byte, string, error) {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", activityID).First(a).Error; err != nil {
@@ -93,7 +91,6 @@ func ExportSignups(activityID int64, status int, creatorID int64, isAdmin bool) 
 			_ = file.SetCellStyle(sheet, cell, cell, bodyStyle)
 		}
 	}
-	// 自适应列宽
 	for i, header := range headers {
 		width := 14.0
 		if runeWidth := float64(len([]rune(header)) * 2); runeWidth > width {

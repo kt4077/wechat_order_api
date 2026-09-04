@@ -1,4 +1,3 @@
-// Package crypto 提供隐私数据 AES 加密存储、密码哈希校验等安全工具。
 package crypto
 
 import (
@@ -15,7 +14,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Encrypt 使用 AES-CBC 加密字符串，返回 Base64 密文。空字符串原样返回。
 func Encrypt(plain string) (string, error) {
 	if plain == "" {
 		return "", nil
@@ -37,7 +35,6 @@ func Encrypt(plain string) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf), nil
 }
 
-// Decrypt 解密 AES-CBC 密文。空字符串或解密失败时返回原文，避免脏数据导致服务异常。
 func Decrypt(cipherText string) string {
 	if cipherText == "" {
 		return ""
@@ -49,7 +46,6 @@ func Decrypt(cipherText string) string {
 	}
 	raw, err := base64.StdEncoding.DecodeString(cipherText)
 	if err != nil || len(raw) <= aes.BlockSize || (len(raw)%aes.BlockSize) != 0 {
-		// 兼容历史明文数据
 		return cipherText
 	}
 	buf := make([]byte, len(raw)-aes.BlockSize)
@@ -63,7 +59,6 @@ func Decrypt(cipherText string) string {
 	return string(buf)
 }
 
-// MaskPhone 手机号脱敏：138****8888
 func MaskPhone(phone string) string {
 	if len(phone) < 7 {
 		return phone
@@ -71,7 +66,6 @@ func MaskPhone(phone string) string {
 	return phone[:3] + "****" + phone[len(phone)-4:]
 }
 
-// MaskIDCard 身份证脱敏：前 6 后 4
 func MaskIDCard(id string) string {
 	if len(id) < 10 {
 		return id
@@ -79,13 +73,11 @@ func MaskIDCard(id string) string {
 	return id[:6] + strings.Repeat("*", len(id)-10) + id[len(id)-4:]
 }
 
-// HashPassword 生成 bcrypt 密码哈希
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
-// CheckPassword 校验密码是否匹配
 func CheckPassword(password, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ApplyMerchant 提交入驻申请
 func ApplyMerchant(c *gin.Context) {
 	userID := currentUser(c)
 	if userID == 0 {
@@ -27,7 +26,6 @@ func ApplyMerchant(c *gin.Context) {
 	response.SuccessMsg(c, "申请已提交，请等待平台审核", nil)
 }
 
-// MyMerchantStatus 查询我的入驻状态
 func MyMerchantStatus(c *gin.Context) {
 	data, err := service.MyMerchantStatus(currentUser(c))
 	if err != nil {

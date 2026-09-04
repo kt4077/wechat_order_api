@@ -2,15 +2,13 @@ package model
 
 import "time"
 
-// 报名状态（从 1 开始，避免使用 0 作为状态值）
 const (
-	SignupStatusPending  int8 = 1 // 待审核
-	SignupStatusApproved int8 = 2 // 审核通过
-	SignupStatusRejected int8 = 3 // 审核驳回
-	SignupStatusCanceled int8 = 4 // 已撤销
+	SignupStatusPending  int8 = 1
+	SignupStatusApproved int8 = 2
+	SignupStatusRejected int8 = 3
+	SignupStatusCanceled int8 = 4
 )
 
-// Signup 报名记录表
 type Signup struct {
 	BaseModel
 	ActivityID    int64      `gorm:"column:activity_id;type:bigint;not null;index:idx_signup_activity;comment:活动ID" json:"activity_id"`
@@ -34,5 +32,4 @@ type Signup struct {
 	ClientIP      string     `gorm:"column:client_ip;type:varchar(64);comment:提交IP" json:"client_ip"`
 }
 
-// TableName 数据表名
 func (Signup) TableName() string { return "signup" }

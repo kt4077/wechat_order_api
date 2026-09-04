@@ -2,27 +2,23 @@ package model
 
 import "time"
 
-// 用户角色常量（从 1 开始，避免使用 0 作为状态值）
 const (
-	RoleNormal     int8 = 1 // 普通用户
-	RoleMerchant   int8 = 2 // 入驻管理员（主办方）
-	RoleSuperAdmin int8 = 3 // 超级管理员
+	RoleNormal     int8 = 1
+	RoleMerchant   int8 = 2
+	RoleSuperAdmin int8 = 3
 )
 
-// 用户状态常量
 const (
-	UserStatusNormal  int8 = 1 // 正常
-	UserStatusDisable int8 = 2 // 禁用
+	UserStatusNormal  int8 = 1
+	UserStatusDisable int8 = 2
 )
 
-// 性别常量（从 1 开始，避免使用 0 作为枚举值）
 const (
-	GenderUnknown int8 = 1 // 未知
-	GenderMale    int8 = 2 // 男
-	GenderFemale  int8 = 3 // 女
+	GenderUnknown int8 = 1
+	GenderMale    int8 = 2
+	GenderFemale  int8 = 3
 )
 
-// User 微信端用户表
 type User struct {
 	BaseModel
 	Openid        string     `gorm:"column:openid;type:varchar(64);uniqueIndex:uk_openid;not null;comment:微信openid" json:"openid"`
@@ -38,5 +34,4 @@ type User struct {
 	LastLoginTime *time.Time `gorm:"column:last_login_time;comment:最近登录时间" json:"last_login_time"`
 }
 
-// TableName 数据表名
 func (User) TableName() string { return "user" }

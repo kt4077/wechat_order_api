@@ -1,7 +1,5 @@
-// Package errcode 定义全局统一错误码体系，区分参数错误、权限错误、业务错误与系统错误。
 package errcode
 
-// Error 业务错误类型
 type Error struct {
 	Code int    `json:"code"`
 	Msg  string `json:"msg"`
@@ -9,19 +7,17 @@ type Error struct {
 
 func (e *Error) Error() string { return e.Msg }
 
-// 错误码常量
 const (
-	CodeSuccess      = 0    // 成功
-	CodeInvalidParam = 1001 // 参数错误
-	CodeUnauthorized = 1002 // 未登录 / 登录已过期
-	CodeForbidden    = 1003 // 权限不足
-	CodeNotFound     = 1004 // 数据不存在
-	CodeTooMany      = 1005 // 请求过于频繁
-	CodeBusiness     = 2001 // 业务错误
-	CodeSystem       = 5001 // 系统错误
+	CodeSuccess      = 0
+	CodeInvalidParam = 1001
+	CodeUnauthorized = 1002
+	CodeForbidden    = 1003
+	CodeNotFound     = 1004
+	CodeTooMany      = 1005
+	CodeBusiness     = 2001
+	CodeSystem       = 5001
 )
 
-// 预定义错误
 var (
 	OK           = &Error{Code: CodeSuccess, Msg: "success"}
 	ErrParams    = &Error{Code: CodeInvalidParam, Msg: "参数错误"}
@@ -38,17 +34,14 @@ var (
 	ErrPending   = &Error{Code: CodeBusiness, Msg: "已有审核中的申请，请耐心等待"}
 )
 
-// New 创建一个自定义业务错误
 func New(code int, msg string) *Error {
 	return &Error{Code: code, Msg: msg}
 }
 
-// WithMsg 基于已有错误码生成新的错误提示，保持错误码语义不变
 func (e *Error) WithMsg(msg string) *Error {
 	return &Error{Code: e.Code, Msg: msg}
 }
 
-// Is 判断两个错误是否同一错误码
 func Is(err error, target *Error) bool {
 	if err == nil {
 		return false

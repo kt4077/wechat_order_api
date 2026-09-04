@@ -1,6 +1,5 @@
 package dto
 
-// LoginReq 小程序登录请求
 type LoginReq struct {
 	Code      string `json:"code"`
 	Nickname  string `json:"nickname"`
@@ -9,7 +8,6 @@ type LoginReq struct {
 	InviterID int64  `json:"inviter_id"`
 }
 
-// LoginResp 小程序登录响应
 type LoginResp struct {
 	Token     string    `json:"token"`
 	ExpireAt  int64     `json:"expire_at"`
@@ -17,7 +15,6 @@ type LoginResp struct {
 	NeedPhone bool      `json:"need_phone"`
 }
 
-// UserInfo 用户基本信息（对外输出，隐私字段已脱敏）
 type UserInfo struct {
 	ID           int64  `json:"id"`
 	Openid       string `json:"openid"`
@@ -33,7 +30,6 @@ type UserInfo struct {
 	CreateTime   string `json:"create_time"`
 }
 
-// UpdateProfileReq 更新用户资料请求
 type UpdateProfileReq struct {
 	Nickname string `json:"nickname"`
 	Avatar   string `json:"avatar"`
@@ -42,17 +38,14 @@ type UpdateProfileReq struct {
 	Phone    string `json:"phone"`
 }
 
-// UserQuery 用户查询参数
 type UserQuery struct {
 	Page     int    `json:"page" form:"page"`
 	PageSize int    `json:"page_size" form:"page_size"`
 	Keyword  string `json:"keyword" form:"keyword"`
-	// Role 使用指针类型：nil 表示查询全部角色
-	Role   *int `json:"role" form:"role"`
-	Status int  `json:"status" form:"status"` // 0 全部，1 正常，2 禁用
+	Role     *int   `json:"role" form:"role"`
+	Status   int    `json:"status" form:"status"`
 }
 
-// AdminUserItem 后台用户列表项
 type AdminUserItem struct {
 	ID            int64  `json:"id"`
 	Nickname      string `json:"nickname"`
@@ -67,7 +60,6 @@ type AdminUserItem struct {
 	CreateTime    string `json:"create_time"`
 }
 
-// ChangeStatusReq 状态变更通用请求
 type ChangeStatusReq struct {
 	ID     int64  `json:"id"`
 	Status int8   `json:"status"`

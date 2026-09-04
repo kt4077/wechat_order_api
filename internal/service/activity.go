@@ -18,7 +18,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// calcPersistStatus 根据报名时间计算需要落库的活动状态
 func calcPersistStatus(a *model.Activity) int8 {
 	now := time.Now()
 	if a.SignStartTime != nil && now.Before(*a.SignStartTime) {
@@ -33,7 +32,6 @@ func calcPersistStatus(a *model.Activity) int8 {
 	return model.ActivityStatusSigning
 }
 
-// EffectiveStatus 实时计算活动对外展示状态（草稿/下架/待审核/驳回沿用存储值，其余按时间推导）
 func EffectiveStatus(a *model.Activity) int8 {
 	switch a.Status {
 	case model.ActivityStatusDraft, model.ActivityStatusOffline,
@@ -43,7 +41,6 @@ func EffectiveStatus(a *model.Activity) int8 {
 	return calcPersistStatus(a)
 }
 
-// StatusText 生成活动状态文案，名额为 0 时提示名额已满
 func StatusText(status int8, quota, signedCount int) string {
 	switch status {
 	case model.ActivityStatusDraft:
@@ -68,7 +65,6 @@ func StatusText(status int8, quota, signedCount int) string {
 	}
 }
 
-// RemainQuota 计算剩余名额，quota=0 表示不限，返回 -1
 func RemainQuota(quota, signedCount int) int {
 	if quota <= 0 {
 		return -1
@@ -80,7 +76,6 @@ func RemainQuota(quota, signedCount int) int {
 	return remain
 }
 
-// ListActivities 活动列表（分页 + 筛选 + 搜索）
 func ListActivities(q *dto.ActivityQuery) ([]dto.ActivityListItem, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.Activity{})
@@ -122,9 +117,7 @@ func ListActivities(q *dto.ActivityQuery) ([]dto.ActivityListItem, int64, error)
 	case "rejected":
 		tx = tx.Where("status = ?", model.ActivityStatusRejected)
 	default:
-		// all：管理端，展示全部活动（含草稿、待审核与已下架）；mine：我的活动，同样不过滤
 		if q.Scope != "mine" && q.Scope != "all" {
-			// 公开列表仅展示审核通过的活动
 			tx = tx.Where("status NOT IN ?", []int8{
 				model.ActivityStatusDraft, model.ActivityStatusOffline,
 				model.ActivityStatusPending, model.ActivityStatusRejected,
@@ -154,7 +147,6 @@ func ListActivities(q *dto.ActivityQuery) ([]dto.ActivityListItem, int64, error)
 	return items, total, nil
 }
 
-// countPendingSignups 批量统计活动待审核报名数量
 func countPendingSignups(activityIDs []int64) (map[int64]int64, error) {
 	result := map[int64]int64{}
 	if len(activityIDs) == 0 {
@@ -176,7 +168,6 @@ func countPendingSignups(activityIDs []int64) (map[int64]int64, error) {
 	return result, nil
 }
 
-// BuildActivityListItem 将活动实体转换为对外列表项
 func BuildActivityListItem(a *model.Activity) *dto.ActivityListItem {
 	status := EffectiveStatus(a)
 	return &dto.ActivityListItem{
@@ -211,7 +202,6 @@ func BuildActivityListItem(a *model.Activity) *dto.ActivityListItem {
 	}
 }
 
-// ActivityDetail 活动详情，附带当前用户报名状态与报名可用性判断
 func ActivityDetail(id, userID int64) (*dto.ActivityDetail, error) {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", id).First(a).Error; err != nil {
@@ -250,7 +240,6 @@ func ActivityDetail(id, userID int64) (*dto.ActivityDetail, error) {
 			}
 		}
 	}
-	// 浏览量自增（失败不影响主流程）
 	if err := model.DB.Model(&model.Activity{}).Where("id = ?", id).
 		UpdateColumn("view_count", gorm.Expr("view_count + 1")).Error; err != nil {
 		logger.Warnf("更新活动浏览量失败：%v", err)
@@ -258,7 +247,6 @@ func ActivityDetail(id, userID int64) (*dto.ActivityDetail, error) {
 	return detail, nil
 }
 
-// CanSignup 判断当前是否允许报名，返回可用性与提示文案
 func CanSignup(a *model.Activity, status int8) (bool, string) {
 	switch status {
 	case model.ActivityStatusDraft:
@@ -280,7 +268,6 @@ func CanSignup(a *model.Activity, status int8) (bool, string) {
 	return true, ""
 }
 
-// SaveActivity 新增或编辑活动，需校验主办方权限与表单配置
 func SaveActivity(userID int64, isOfficial bool, req *dto.ActivitySaveReq) (int64, error) {
 	req.Title = validate.Trim(req.Title)
 	if req.Title == "" {
@@ -324,7 +311,6 @@ func SaveActivity(userID int64, isOfficial bool, req *dto.ActivitySaveReq) (int6
 	if req.Quota < 0 {
 		return 0, errcode.ErrParams.WithMsg("报名名额不能为负数")
 	}
-	// 枚举值规范化：auto_audit 仅允许 1需审核 2免审核，请求缺失(0)时默认需审核，避免写入 0
 	if req.AutoAudit != 1 && req.AutoAudit != 2 {
 		req.AutoAudit = 1
 	}
@@ -395,12 +381,10 @@ func SaveActivity(userID int64, isOfficial bool, req *dto.ActivitySaveReq) (int6
 		if req.Status == model.ActivityStatusDraft {
 			entity.Status = model.ActivityStatusDraft
 		} else if old.Status == model.ActivityStatusOffline {
-			// 编辑已下架活动时保持下架状态，需手动重新上架
 			entity.Status = model.ActivityStatusOffline
 		} else if old.Status == model.ActivityStatusDraft ||
 			old.Status == model.ActivityStatusPending ||
 			old.Status == model.ActivityStatusRejected {
-			// 草稿发布、驳回后修改重新提交，都需再次进入平台审核
 			entity.Status = model.ActivityStatusPending
 		}
 		if err := model.DB.Model(&model.Activity{}).Where("id = ?", req.ID).
@@ -414,7 +398,6 @@ func SaveActivity(userID int64, isOfficial bool, req *dto.ActivitySaveReq) (int6
 
 	entity.SignedCount = 0
 	entity.PassCount = 0
-	// 发布后进入待审核，平台审核通过才对外展示
 	entity.Status = model.ActivityStatusPending
 	if req.Status == model.ActivityStatusDraft {
 		entity.Status = model.ActivityStatusDraft
@@ -426,7 +409,6 @@ func SaveActivity(userID int64, isOfficial bool, req *dto.ActivitySaveReq) (int6
 	return entity.ID, nil
 }
 
-// NormalizeFormConfig 规范化表单配置：补齐默认 key、校验选项与重复项
 func NormalizeFormConfig(fields []model.FormField) ([]model.FormField, error) {
 	if len(fields) == 0 {
 		return model.DefaultFormConfig(), nil
@@ -473,7 +455,6 @@ func NormalizeFormConfig(fields []model.FormField) ([]model.FormField, error) {
 	return result, nil
 }
 
-// ChangeActivityStatus 上架 / 下架 / 发布活动
 func ChangeActivityStatus(userID int64, isAdmin bool, req *dto.ActivityStatusReq) error {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", req.ID).First(a).Error; err != nil {
@@ -484,16 +465,13 @@ func ChangeActivityStatus(userID int64, isAdmin bool, req *dto.ActivityStatusReq
 	}
 	target := req.Status
 	if target == model.ActivityStatusOffline {
-		// 下架
 		if err := model.DB.Model(&model.Activity{}).Where("id = ?", req.ID).
 			Update("status", model.ActivityStatusOffline).Error; err != nil {
 			return errcode.ErrSystem.WithMsg("操作失败")
 		}
-		// 通知已报名用户
 		notifyActivityOffline(a)
 		return nil
 	}
-	// 上架或发布：重新按时间计算状态
 	a.Status = model.ActivityStatusSigning
 	target = calcPersistStatus(a)
 	if err := model.DB.Model(&model.Activity{}).Where("id = ?", req.ID).
@@ -503,7 +481,6 @@ func ChangeActivityStatus(userID int64, isAdmin bool, req *dto.ActivityStatusReq
 	return nil
 }
 
-// AuditActivity 平台审核活动：通过后按报名时间计算状态并对外展示，驳回后进入审核驳回状态
 func AuditActivity(req *dto.ActivityAuditReq) error {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", req.ID).First(a).Error; err != nil {
@@ -536,7 +513,6 @@ func AuditActivity(req *dto.ActivityAuditReq) error {
 	return nil
 }
 
-// DeleteActivity 软删除活动（仅创建者或平台管理员）
 func DeleteActivity(userID int64, isAdmin bool, id int64) error {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", id).First(a).Error; err != nil {
@@ -551,7 +527,6 @@ func DeleteActivity(userID int64, isAdmin bool, id int64) error {
 	return nil
 }
 
-// CopyActivity 复刻活动，生成草稿副本
 func CopyActivity(userID int64, isAdmin bool, id int64) (int64, error) {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", id).First(a).Error; err != nil {
@@ -603,7 +578,6 @@ func CopyActivity(userID int64, isAdmin bool, id int64) (int64, error) {
 	return copied.ID, nil
 }
 
-// notifyActivityOffline 活动下架时通知已报名用户
 func notifyActivityOffline(a *model.Activity) {
 	ids := make([]int64, 0)
 	_ = model.DB.Model(&model.Signup{}).
@@ -615,7 +589,6 @@ func notifyActivityOffline(a *model.Activity) {
 	}
 }
 
-// QuotaWarnCheck 名额不足预警：剩余名额不足 10% 且未通知过则推送给创建者
 func QuotaWarnCheck(a *model.Activity) {
 	if a.Quota <= 0 || a.WarnNotified == 2 || a.SignedCount < a.Quota {
 		return
@@ -629,7 +602,6 @@ func QuotaWarnCheck(a *model.Activity) {
 	_ = model.DB.Model(&model.Activity{}).Where("id = ?", a.ID).Update("warn_notified", 2).Error
 }
 
-// PushSubscribe 统一封装订阅消息推送，未配置模板时自动跳过
 func PushSubscribe(openID, templateID string, data wechat.SubscribeData) {
 	if openID == "" || templateID == "" {
 		return

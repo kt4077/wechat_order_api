@@ -6,30 +6,26 @@ import (
 	"gorm.io/gorm"
 )
 
-// 活动状态（从 1 开始，避免使用 0 作为状态值）
 const (
-	ActivityStatusDraft    int8 = 1 // 草稿
-	ActivityStatusNotStart int8 = 2 // 未开始
-	ActivityStatusSigning  int8 = 3 // 报名中
-	ActivityStatusEnded    int8 = 4 // 已结束
-	ActivityStatusOffline  int8 = 5 // 已下架
-	ActivityStatusPending  int8 = 6 // 待审核：用户发布后等待平台审核
-	ActivityStatusRejected int8 = 7 // 审核驳回
+	ActivityStatusDraft    int8 = 1
+	ActivityStatusNotStart int8 = 2
+	ActivityStatusSigning  int8 = 3
+	ActivityStatusEnded    int8 = 4
+	ActivityStatusOffline  int8 = 5
+	ActivityStatusPending  int8 = 6
+	ActivityStatusRejected int8 = 7
 )
 
-// 活动形式
 const (
-	ActivityTypeOnline  int8 = 1 // 线上活动
-	ActivityTypeOffline int8 = 2 // 线下活动
+	ActivityTypeOnline  int8 = 1
+	ActivityTypeOffline int8 = 2
 )
 
-// 是否平台官方
 const (
-	ActivityOfficialNo  int8 = 1 // 否（用户发布）
-	ActivityOfficialYes int8 = 2 // 是（平台官方）
+	ActivityOfficialNo  int8 = 1
+	ActivityOfficialYes int8 = 2
 )
 
-// Activity 活动表
 type Activity struct {
 	BaseModel
 	Title         string     `gorm:"column:title;type:varchar(120);not null;comment:活动名称" json:"title"`
@@ -65,27 +61,24 @@ type Activity struct {
 	WarnNotified  int8       `gorm:"column:warn_notified;default:1;comment:名额预警已通知 1否 2是" json:"warn_notified"`
 }
 
-// TableName 数据表名
 func (Activity) TableName() string { return "activity" }
 
-// FormField 报名表单字段定义
 type FormField struct {
-	Key         string   `json:"key"`                 // 字段唯一标识
-	Label       string   `json:"label"`               // 字段名称
-	Type        string   `json:"type"`                // text/textarea/phone/idcard/number/radio/checkbox/select/image/date
-	Required    bool     `json:"required"`            // 是否必填
-	Placeholder string   `json:"placeholder"`         // 占位提示
-	Options     []string `json:"options,omitempty"`   // 选项（单选/多选/下拉）
-	MinLen      int      `json:"min_len"`             // 最小长度
-	MaxLen      int      `json:"max_len"`             // 最大长度
-	MinValue    *float64 `json:"min_value,omitempty"` // 数字最小值
-	MaxValue    *float64 `json:"max_value,omitempty"` // 数字最大值
-	Sort        int      `json:"sort"`                // 排序
-	Default     string   `json:"default,omitempty"`   // 默认值
-	Privacy     bool     `json:"privacy"`             // 是否隐私字段（前端脱敏展示）
+	Key         string   `json:"key"`
+	Label       string   `json:"label"`
+	Type        string   `json:"type"`
+	Required    bool     `json:"required"`
+	Placeholder string   `json:"placeholder"`
+	Options     []string `json:"options,omitempty"`
+	MinLen      int      `json:"min_len"`
+	MaxLen      int      `json:"max_len"`
+	MinValue    *float64 `json:"min_value,omitempty"`
+	MaxValue    *float64 `json:"max_value,omitempty"`
+	Sort        int      `json:"sort"`
+	Default     string   `json:"default,omitempty"`
+	Privacy     bool     `json:"privacy"`
 }
 
-// DefaultFormConfig 新活动默认表单模板：姓名 + 手机号
 func DefaultFormConfig() []FormField {
 	return []FormField{
 		{Key: "name", Label: "姓名", Type: "text", Required: true, Placeholder: "请输入姓名", MinLen: 2, MaxLen: 20, Sort: 1},
@@ -93,10 +86,9 @@ func DefaultFormConfig() []FormField {
 	}
 }
 
-// BeforeCreate 创建活动时若无自定义表单则填充默认模板
 func (a *Activity) BeforeCreate(tx *gorm.DB) error {
 	if a.FormConfig == "" {
-		_ = tx // 保持钩子简洁：由 Service 层写入默认配置
+		_ = tx
 	}
 	return nil
 }

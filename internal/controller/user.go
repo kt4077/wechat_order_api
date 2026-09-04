@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetProfile 获取个人资料
 func GetProfile(c *gin.Context) {
 	data, err := service.GetProfile(currentUser(c))
 	if err != nil {
@@ -21,7 +20,6 @@ func GetProfile(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// UpdateProfile 更新个人资料
 func UpdateProfile(c *gin.Context) {
 	req, ok := bindJSON[dto.UpdateProfileReq](c)
 	if !ok {
@@ -35,7 +33,6 @@ func UpdateProfile(c *gin.Context) {
 	response.SuccessMsg(c, "保存成功", data)
 }
 
-// DeleteMyData 用户自主删除个人报名数据（软删除）
 func DeleteMyData(c *gin.Context) {
 	if err := service.DeleteMyData(currentUser(c)); err != nil {
 		response.Fail(c, err)
@@ -44,7 +41,6 @@ func DeleteMyData(c *gin.Context) {
 	response.SuccessMsg(c, "已删除个人报名数据", nil)
 }
 
-// ListMessages 消息通知列表
 func ListMessages(c *gin.Context) {
 	q, ok := bindQuery[dto.MessageQuery](c)
 	if !ok {
@@ -58,7 +54,6 @@ func ListMessages(c *gin.Context) {
 	response.Page(c, list, total, q.Page, q.PageSize)
 }
 
-// ReadMessage 标记消息已读，支持 ?id=1 或请求体 {"id":1}
 func ReadMessage(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Query("id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -78,7 +73,6 @@ func ReadMessage(c *gin.Context) {
 	response.SuccessMsg(c, "已标记已读", nil)
 }
 
-// ReadAllMessages 全部标记已读
 func ReadAllMessages(c *gin.Context) {
 	if err := service.ReadAllMessages(currentUser(c)); err != nil {
 		response.Fail(c, err)
@@ -87,7 +81,6 @@ func ReadAllMessages(c *gin.Context) {
 	response.SuccessMsg(c, "已全部标记已读", nil)
 }
 
-// UnreadCount 未读消息数量
 func UnreadCount(c *gin.Context) {
 	response.Success(c, gin.H{"count": service.UnreadCount(currentUser(c))})
 }

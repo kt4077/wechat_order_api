@@ -7,7 +7,6 @@ import (
 	"activity/pkg/validate"
 )
 
-// SendMessage 写入站内消息。消息落库后可同时触发微信订阅消息推送。
 func SendMessage(userID int64, msgType int8, title, content string, relatedID int64) error {
 	if userID <= 0 {
 		return nil
@@ -26,7 +25,6 @@ func SendMessage(userID int64, msgType int8, title, content string, relatedID in
 	return nil
 }
 
-// ListMessages 分页查询用户消息
 func ListMessages(userID int64, q *dto.MessageQuery) ([]dto.MessageItem, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.Message{}).Where("user_id = ?", userID)
@@ -57,7 +55,6 @@ func ListMessages(userID int64, q *dto.MessageQuery) ([]dto.MessageItem, int64, 
 	return items, total, nil
 }
 
-// ReadMessage 标记单条消息已读
 func ReadMessage(userID, id int64) error {
 	if err := model.DB.Model(&model.Message{}).Where("id = ? AND user_id = ?", id, userID).
 		Update("is_read", 2).Error; err != nil {
@@ -66,7 +63,6 @@ func ReadMessage(userID, id int64) error {
 	return nil
 }
 
-// ReadAllMessages 一键已读
 func ReadAllMessages(userID int64) error {
 	if err := model.DB.Model(&model.Message{}).Where("user_id = ? AND is_read = 1", userID).
 		Update("is_read", 2).Error; err != nil {
@@ -75,14 +71,12 @@ func ReadAllMessages(userID int64) error {
 	return nil
 }
 
-// UnreadCount 未读消息数量
 func UnreadCount(userID int64) int64 {
 	var count int64
 	_ = model.DB.Model(&model.Message{}).Where("user_id = ? AND is_read = 1", userID).Count(&count).Error
 	return count
 }
 
-// MessageTypeText 消息类型文案
 func MessageTypeText(t int8) string {
 	switch t {
 	case model.MsgTypeSignup:

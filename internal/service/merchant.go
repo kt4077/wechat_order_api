@@ -17,7 +17,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// MerchantStatusText 用户端入驻「展示状态」文案（对应 dto.MerchantDisplayXxx）
 func MerchantStatusText(status int8) string {
 	switch status {
 	case dto.MerchantDisplayNone:
@@ -35,7 +34,6 @@ func MerchantStatusText(status int8) string {
 	}
 }
 
-// ApplyStatusText 后台入驻申请「数据库状态」文案（对应 model.ApplyStatusXxx）
 func ApplyStatusText(status int8) string {
 	switch status {
 	case model.ApplyStatusPending:
@@ -49,7 +47,6 @@ func ApplyStatusText(status int8) string {
 	}
 }
 
-// MerchantTypeText 入驻类型文案
 func MerchantTypeText(t int8) string {
 	if t == model.MerchantTypeOrg {
 		return "机构"
@@ -57,8 +54,6 @@ func MerchantTypeText(t int8) string {
 	return "个人"
 }
 
-// ApplyMerchant 提交入驻申请。
-// 规则：同一用户同一时间仅允许一条待审核申请；驳回后可无限次重新提交并覆盖数据；入驻成功后不可重复申请。
 func ApplyMerchant(userID int64, req *dto.MerchantApplyReq, clientIP string) error {
 	req.ContactName = validate.Trim(req.ContactName)
 	req.ContactPhone = validate.Trim(req.ContactPhone)
@@ -89,7 +84,6 @@ func ApplyMerchant(userID int64, req *dto.MerchantApplyReq, clientIP string) err
 		return errcode.ErrBusiness.WithMsg("您已是入驻主办方，无需重复申请")
 	}
 
-	// 待审核申请唯一性校验
 	var pendingCount int64
 	if err := model.DB.Model(&model.MerchantApply{}).
 		Where("user_id = ? AND status = ?", userID, model.ApplyStatusPending).Count(&pendingCount).Error; err != nil {
@@ -130,7 +124,6 @@ func ApplyMerchant(userID int64, req *dto.MerchantApplyReq, clientIP string) err
 	return nil
 }
 
-// MyMerchantStatus 查询当前用户的入驻状态与最新申请信息
 func MyMerchantStatus(userID int64) (*dto.MerchantStatusResp, error) {
 	user, err := getUserByID(userID)
 	if err != nil {
@@ -160,7 +153,6 @@ func MyMerchantStatus(userID int64) (*dto.MerchantStatusResp, error) {
 			resp.Status = dto.MerchantDisplayPassed
 			resp.CanApply = false
 		} else {
-			// 平台已收回入驻权限
 			resp.Status = dto.MerchantDisplayRevoked
 			resp.CanApply = false
 		}
@@ -172,7 +164,6 @@ func MyMerchantStatus(userID int64) (*dto.MerchantStatusResp, error) {
 	return resp, nil
 }
 
-// AdminApplyList 后台入驻申请列表
 func AdminApplyList(q *dto.MerchantQuery) ([]dto.MerchantApplyItem, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.MerchantApply{})
@@ -201,7 +192,6 @@ func AdminApplyList(q *dto.MerchantQuery) ([]dto.MerchantApplyItem, int64, error
 	return items, total, nil
 }
 
-// BuildMerchantApplyItem 组装入驻申请列表项，后台展示完整联系电话
 func BuildMerchantApplyItem(a *model.MerchantApply) *dto.MerchantApplyItem {
 	images := make([]string, 0)
 	if a.QualificationImages != "" {
@@ -227,8 +217,6 @@ func BuildMerchantApplyItem(a *model.MerchantApply) *dto.MerchantApplyItem {
 	}
 }
 
-// AuditMerchant 审核入驻申请：通过后自动开通主办方权限并推送通知。
-// 入参 req.Status 为「审核动作」（1通过 / 2驳回），内部映射为存储状态。
 func AuditMerchant(adminID int64, adminName string, req *dto.MerchantAuditReq) error {
 	if req.Status != dto.AuditActionPass && req.Status != dto.AuditActionReject {
 		return errcode.ErrParams.WithMsg("审核状态不合法")
@@ -236,7 +224,6 @@ func AuditMerchant(adminID int64, adminName string, req *dto.MerchantAuditReq) e
 	if req.Status == dto.AuditActionReject && validate.Trim(req.Remark) == "" {
 		return errcode.ErrParams.WithMsg("驳回时请填写驳回原因")
 	}
-	// 动作 → 存储状态
 	targetStatus := model.ApplyStatusApproved
 	if req.Status == dto.AuditActionReject {
 		targetStatus = model.ApplyStatusRejected
@@ -261,7 +248,6 @@ func AuditMerchant(adminID int64, adminName string, req *dto.MerchantAuditReq) e
 			return errcode.ErrSystem.WithMsg("审核失败")
 		}
 		if targetStatus == model.ApplyStatusApproved {
-			// 开通主办方权限
 			if err := tx.Model(&model.User{}).Where("id = ?", apply.UserID).
 				Updates(map[string]interface{}{
 					"role":          model.RoleMerchant,
@@ -283,7 +269,6 @@ func AuditMerchant(adminID int64, adminName string, req *dto.MerchantAuditReq) e
 	return nil
 }
 
-// BatchAuditMerchant 批量审核入驻申请
 func BatchAuditMerchant(adminID int64, adminName string, req *dto.MerchantBatchAuditReq) (int, error) {
 	if len(req.IDs) == 0 {
 		return 0, errcode.ErrParams.WithMsg("请选择要审核的申请")
@@ -306,7 +291,6 @@ func BatchAuditMerchant(adminID int64, adminName string, req *dto.MerchantBatchA
 	return success, firstErr
 }
 
-// RevokeMerchant 平台手动关闭/撤销用户入驻权限，撤销后仅可查看历史活动数据
 func RevokeMerchant(adminID int64, adminName string, userID int64) error {
 	user, err := getUserByID(userID)
 	if err != nil {
@@ -325,7 +309,6 @@ func RevokeMerchant(adminID int64, adminName string, userID int64) error {
 	return nil
 }
 
-// notifyMerchantAuditResult 入驻审核结果通知
 func notifyMerchantAuditResult(a *model.MerchantApply, adminName string) {
 	if a == nil {
 		return

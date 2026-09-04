@@ -1,4 +1,3 @@
-// Package upload 统一处理图片上传，支持本地磁盘（local）与七牛云对象存储（qiniu）。
 package upload
 
 import (
@@ -19,11 +18,8 @@ import (
 	"github.com/qiniu/go-sdk/v7/storage"
 )
 
-// allowExt 允许上传的图片扩展名
 var allowExt = map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true, ".bmp": true}
 
-// SaveImage 保存单个上传图片并返回可访问 URL。
-// 存储驱动由 oss.driver 决定：qiniu 上传至七牛云，local 落盘到 oss.local.root。
 func SaveImage(file *multipart.FileHeader) (string, error) {
 	cfg := config.Get().OSS
 	ext := strings.ToLower(filepath.Ext(file.Filename))
@@ -44,7 +40,6 @@ func SaveImage(file *multipart.FileHeader) (string, error) {
 	return saveToLocal(file, ext, cfg)
 }
 
-// saveToLocal 保存到本地磁盘，并通过 /uploads 静态目录对外提供访问
 func saveToLocal(file *multipart.FileHeader, ext string, cfg config.OSSConfig) (string, error) {
 	src, err := file.Open()
 	if err != nil {
@@ -76,7 +71,6 @@ func saveToLocal(file *multipart.FileHeader, ext string, cfg config.OSSConfig) (
 	return "/uploads/" + relPath, nil
 }
 
-// saveToQiniu 使用表单直传方式上传到七牛云对象存储
 func saveToQiniu(file *multipart.FileHeader, ext string, cfg config.OSSConfig) (string, error) {
 	q := cfg.Qiniu
 	if q.Bucket == "" || q.AccessKey == "" || q.SecretKey == "" {
@@ -89,7 +83,6 @@ func saveToQiniu(file *multipart.FileHeader, ext string, cfg config.OSSConfig) (
 	defer src.Close()
 
 	mac := auth.New(q.AccessKey, q.SecretKey)
-	// 上传凭证默认有效期 1 小时，saveKey 与 key 保持一致
 	policy := storage.PutPolicy{Scope: q.Bucket, Expires: 3600}
 	upToken := policy.UploadToken(mac)
 
@@ -115,7 +108,6 @@ func saveToQiniu(file *multipart.FileHeader, ext string, cfg config.OSSConfig) (
 	return strings.TrimRight(q.Domain, "/") + "/" + ret.Key, nil
 }
 
-// resolveZone 将区域代号转换为七牛云存储区域配置，留空时由 SDK 自动选择
 func resolveZone(code string) *storage.Zone {
 	switch strings.ToLower(code) {
 	case "z0", "huadong", "east":
@@ -129,7 +121,6 @@ func resolveZone(code string) *storage.Zone {
 	case "as0", "southeast-asia":
 		return &storage.ZoneXinjiapo
 	default:
-		// 未指定区域时由 SDK 依据 bucket 自动查询机房
 		return nil
 	}
 }

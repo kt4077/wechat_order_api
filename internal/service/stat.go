@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Dashboard 后台数据总览：核心指标 + 趋势 + 分布 + 热门活动
 func Dashboard() (*dto.DashboardResp, error) {
 	resp := &dto.DashboardResp{}
 	now := time.Now()
@@ -34,7 +33,6 @@ func Dashboard() (*dto.DashboardResp, error) {
 	return resp, nil
 }
 
-// signupTrend 统计最近 N 天报名趋势
 func signupTrend(days int) []dto.TrendItem {
 	items := make([]dto.TrendItem, 0, days)
 	now := time.Now()
@@ -48,7 +46,6 @@ func signupTrend(days int) []dto.TrendItem {
 	return items
 }
 
-// signupStatusDist 报名状态分布
 func signupStatusDist() []dto.NameValueItem {
 	rows := make([]struct {
 		Status int8  `gorm:"column:status"`
@@ -62,7 +59,6 @@ func signupStatusDist() []dto.NameValueItem {
 	return items
 }
 
-// categoryDist 活动分类分布
 func categoryDist() []dto.NameValueItem {
 	rows := make([]struct {
 		Category string `gorm:"column:category"`
@@ -78,7 +74,6 @@ func categoryDist() []dto.NameValueItem {
 	return items
 }
 
-// hotActivities 报名人数最多的活动
 func hotActivities(limit int) []dto.HotActivityItem {
 	list := make([]model.Activity, 0)
 	_ = model.DB.Where("status NOT IN ?", []int8{model.ActivityStatusDraft}).
@@ -96,7 +91,6 @@ func hotActivities(limit int) []dto.HotActivityItem {
 	return items
 }
 
-// ActivityStat 单个活动的数据统计，用于小程序端活动管理页
 type ActivityStat struct {
 	SignedCount  int             `json:"signed_count"`
 	PassCount    int             `json:"pass_count"`
@@ -108,7 +102,6 @@ type ActivityStat struct {
 	Daily        []dto.TrendItem `json:"daily"`
 }
 
-// GetActivityStat 查询单活动数据统计
 func GetActivityStat(activityID int64, operatorID int64, isAdmin bool) (*ActivityStat, error) {
 	a := &model.Activity{}
 	if err := model.DB.Where("id = ?", activityID).First(a).Error; err != nil {
@@ -142,7 +135,6 @@ func GetActivityStat(activityID int64, operatorID int64, isAdmin bool) (*Activit
 			stat.CancelCount = int(row.Cnt)
 		}
 	}
-	// 最近 7 天报名趋势
 	now := time.Now()
 	for i := 6; i >= 0; i-- {
 		start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, -i)
@@ -156,7 +148,6 @@ func GetActivityStat(activityID int64, operatorID int64, isAdmin bool) (*Activit
 	return stat, nil
 }
 
-// EnsureTables 供启动时调用，保证表结构存在
 func EnsureTables(db *gorm.DB) error {
 	if db == nil {
 		return nil

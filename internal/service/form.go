@@ -1,4 +1,3 @@
-// Package service 承载全部业务逻辑，Controller 层仅负责参数接收与结果返回。
 package service
 
 import (
@@ -14,7 +13,6 @@ import (
 	"encoding/json"
 )
 
-// asString 将任意表单值统一转换为字符串，便于统一校验与导出
 func asString(v interface{}) string {
 	switch val := v.(type) {
 	case nil:
@@ -49,8 +47,6 @@ func asString(v interface{}) string {
 	}
 }
 
-// ValidateFormData 依据活动自定义表单配置校验报名数据
-// 校验规则：必填、手机号格式、身份证格式、数字范围、选项合法性、文本长度
 func ValidateFormData(fields []model.FormField, data map[string]interface{}) error {
 	if data == nil {
 		data = map[string]interface{}{}
@@ -113,7 +109,6 @@ func inOptions(options []string, val string) bool {
 	return false
 }
 
-// ParseFormConfig 解析活动表单配置，解析失败时回退默认模板
 func ParseFormConfig(raw string) []model.FormField {
 	fields := make([]model.FormField, 0)
 	if raw == "" {
@@ -125,7 +120,6 @@ func ParseFormConfig(raw string) []model.FormField {
 	return fields
 }
 
-// ParseFormData 解析报名提交的表单数据
 func ParseFormData(raw string) map[string]interface{} {
 	data := map[string]interface{}{}
 	if raw == "" {

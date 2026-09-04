@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AdminActivityList 后台活动列表（全部活动，含草稿与下架）
 func AdminActivityList(c *gin.Context) {
 	q, ok := bindQuery[dto.ActivityQuery](c)
 	if !ok {
@@ -28,7 +27,6 @@ func AdminActivityList(c *gin.Context) {
 	response.Page(c, list, total, q.Page, q.PageSize)
 }
 
-// AdminActivityDetail 后台活动详情
 func AdminActivityDetail(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -42,7 +40,6 @@ func AdminActivityDetail(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// AdminChangeActivityStatus 后台上架 / 下架活动（违规内容下架）
 func AdminChangeActivityStatus(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -66,7 +63,6 @@ func AdminChangeActivityStatus(c *gin.Context) {
 	response.SuccessMsg(c, "操作成功", nil)
 }
 
-// AdminAuditActivity 后台审核活动（通过 / 驳回）
 func AdminAuditActivity(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -90,7 +86,6 @@ func AdminAuditActivity(c *gin.Context) {
 	response.SuccessMsg(c, "审核完成", nil)
 }
 
-// AdminDeleteActivity 后台删除活动
 func AdminDeleteActivity(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -105,7 +100,6 @@ func AdminDeleteActivity(c *gin.Context) {
 	response.SuccessMsg(c, "删除成功", nil)
 }
 
-// AdminSignupList 后台报名记录列表
 func AdminSignupList(c *gin.Context) {
 	q, ok := bindQuery[dto.SignupQuery](c)
 	if !ok {
@@ -119,7 +113,6 @@ func AdminSignupList(c *gin.Context) {
 	response.Page(c, list, total, q.Page, q.PageSize)
 }
 
-// AdminSignupDetail 后台报名详情
 func AdminSignupDetail(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -133,7 +126,6 @@ func AdminSignupDetail(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// AdminAuditSignup 后台审核报名
 func AdminAuditSignup(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -153,7 +145,6 @@ func AdminAuditSignup(c *gin.Context) {
 	response.SuccessMsg(c, "审核完成", nil)
 }
 
-// AdminBatchAuditSignups 后台批量审核报名
 func AdminBatchAuditSignups(c *gin.Context) {
 	req, ok := bindJSON[dto.SignupBatchAuditReq](c)
 	if !ok {
@@ -169,7 +160,6 @@ func AdminBatchAuditSignups(c *gin.Context) {
 	response.SuccessMsg(c, "成功审核 "+strconv.Itoa(count)+" 条记录", gin.H{"count": count})
 }
 
-// AdminExportSignups 后台导出报名数据
 func AdminExportSignups(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -193,7 +183,6 @@ func AdminExportSignups(c *gin.Context) {
 	c.Data(200, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data)
 }
 
-// AdminUserList 后台用户列表
 func AdminUserList(c *gin.Context) {
 	q, ok := bindQuery[dto.UserQuery](c)
 	if !ok {
@@ -207,7 +196,6 @@ func AdminUserList(c *gin.Context) {
 	response.Page(c, list, total, q.Page, q.PageSize)
 }
 
-// AdminChangeUserStatus 后台启用 / 禁用用户
 func AdminChangeUserStatus(c *gin.Context) {
 	req, ok := bindJSON[dto.ChangeStatusReq](c)
 	if !ok {
@@ -220,7 +208,6 @@ func AdminChangeUserStatus(c *gin.Context) {
 	response.SuccessMsg(c, "操作成功", nil)
 }
 
-// AdminRevokeMerchant 后台撤销用户入驻权限
 func AdminRevokeMerchant(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -233,7 +220,6 @@ func AdminRevokeMerchant(c *gin.Context) {
 	response.SuccessMsg(c, "已收回该用户的入驻权限", nil)
 }
 
-// AdminApplyList 后台入驻申请列表
 func AdminApplyList(c *gin.Context) {
 	q, ok := bindQuery[dto.MerchantQuery](c)
 	if !ok {
@@ -247,7 +233,6 @@ func AdminApplyList(c *gin.Context) {
 	response.Page(c, list, total, q.Page, q.PageSize)
 }
 
-// AdminAuditMerchant 后台审核入驻申请
 func AdminAuditMerchant(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -271,7 +256,6 @@ func AdminAuditMerchant(c *gin.Context) {
 	response.SuccessMsg(c, "审核完成", nil)
 }
 
-// AdminBatchAuditMerchant 后台批量审核入驻申请
 func AdminBatchAuditMerchant(c *gin.Context) {
 	req, ok := bindJSON[dto.MerchantBatchAuditReq](c)
 	if !ok {

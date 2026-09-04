@@ -17,13 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// Login 小程序登录：通过 code 换取 openid，自动注册并下发令牌。
-// 说明：未配置微信 appid 时进入本地调试模式，直接以 code 作为 openid，便于无证书环境联调。
 func Login(req *dto.LoginReq, clientIP string) (*dto.LoginResp, error) {
 	if req.Code == "" {
 		return nil, errcode.ErrParams.WithMsg("缺少登录凭证 code")
 	}
-	// 性别枚举规范化：仅允许 1未知 2男 3女，缺省/异常值(0)默认未知，避免写入 0
 	if req.Gender < 1 || req.Gender > 3 {
 		req.Gender = model.GenderUnknown
 	}
@@ -63,7 +60,6 @@ func Login(req *dto.LoginReq, clientIP string) (*dto.LoginResp, error) {
 	} else if err != nil {
 		return nil, errcode.ErrSystem
 	} else {
-		// 每次登录同步微信侧最新昵称头像
 		updates := map[string]interface{}{"last_login_time": time.Now()}
 		if req.Nickname != "" && req.Nickname != user.Nickname {
 			updates["nickname"] = req.Nickname
@@ -87,12 +83,11 @@ func Login(req *dto.LoginReq, clientIP string) (*dto.LoginResp, error) {
 	if err != nil {
 		return nil, errcode.ErrSystem.WithMsg("生成登录令牌失败")
 	}
-	_ = clientIP // 预留：可写入登录日志
+	_ = clientIP
 	info := BuildUserInfo(user, true)
 	return &dto.LoginResp{Token: token, ExpireAt: expireAt, UserInfo: info, NeedPhone: user.Phone == ""}, nil
 }
 
-// GetProfile 获取用户个人资料
 func GetProfile(userID int64) (*dto.UserInfo, error) {
 	user, err := getUserByID(userID)
 	if err != nil {
@@ -101,7 +96,6 @@ func GetProfile(userID int64) (*dto.UserInfo, error) {
 	return BuildUserInfo(user, true), nil
 }
 
-// UpdateProfile 更新用户资料，手机号需通过格式校验
 func UpdateProfile(userID int64, req *dto.UpdateProfileReq) (*dto.UserInfo, error) {
 	user, err := getUserByID(userID)
 	if err != nil {
@@ -144,7 +138,6 @@ func UpdateProfile(userID int64, req *dto.UpdateProfileReq) (*dto.UserInfo, erro
 	return BuildUserInfo(user, true), nil
 }
 
-// DeleteMyData 用户自主删除个人报名数据（软删除，保留日志）
 func DeleteMyData(userID int64) error {
 	err := model.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("user_id = ?", userID).Delete(&model.Signup{}).Error; err != nil {
@@ -161,7 +154,6 @@ func DeleteMyData(userID int64) error {
 	return nil
 }
 
-// BuildUserInfo 组装对外用户信息，self=true 时展示本人完整手机号，否则脱敏
 func BuildUserInfo(u *model.User, self bool) *dto.UserInfo {
 	phone := crypto.Decrypt(u.Phone)
 	displayPhone := phone
@@ -184,7 +176,6 @@ func BuildUserInfo(u *model.User, self bool) *dto.UserInfo {
 	}
 }
 
-// RoleText 角色文案
 func RoleText(role int8) string {
 	switch role {
 	case model.RoleMerchant:
@@ -196,7 +187,6 @@ func RoleText(role int8) string {
 	}
 }
 
-// getUserByID 查询用户，不存在时返回标准错误
 func getUserByID(id int64) (*model.User, error) {
 	u := &model.User{}
 	if err := model.DB.Where("id = ?", id).First(u).Error; err != nil {

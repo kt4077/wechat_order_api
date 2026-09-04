@@ -2,20 +2,17 @@ package model
 
 import "time"
 
-// 入驻申请状态（从 1 开始，避免使用 0 作为状态值）
 const (
-	ApplyStatusPending  int8 = 1 // 待审核
-	ApplyStatusApproved int8 = 2 // 审核通过
-	ApplyStatusRejected int8 = 3 // 审核驳回
+	ApplyStatusPending  int8 = 1
+	ApplyStatusApproved int8 = 2
+	ApplyStatusRejected int8 = 3
 )
 
-// 入驻类型
 const (
-	MerchantTypePerson int8 = 1 // 个人
-	MerchantTypeOrg    int8 = 2 // 机构
+	MerchantTypePerson int8 = 1
+	MerchantTypeOrg    int8 = 2
 )
 
-// MerchantApply 用户入驻（成为主办方）申请表
 type MerchantApply struct {
 	BaseModel
 	UserID              int64      `gorm:"column:user_id;type:bigint;not null;index:idx_apply_user;comment:申请人ID" json:"user_id"`
@@ -34,5 +31,4 @@ type MerchantApply struct {
 	ClientIP            string     `gorm:"column:client_ip;type:varchar(64);comment:提交IP" json:"client_ip"`
 }
 
-// TableName 数据表名
 func (MerchantApply) TableName() string { return "merchant_apply" }

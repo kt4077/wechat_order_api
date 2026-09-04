@@ -18,7 +18,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// 系统配置默认项，首次启动时初始化
 var defaultConfigs = []dto.ConfigItem{
 	{ConfigKey: "site_name", ConfigValue: "活动报名工具", Remark: "平台名称"},
 	{ConfigKey: "icp_no", ConfigValue: "", Remark: "ICP 备案号"},
@@ -29,7 +28,6 @@ var defaultConfigs = []dto.ConfigItem{
 	{ConfigKey: "help_doc", ConfigValue: "1. 报名流程：选择活动 → 填写表单 → 提交 → 等待审核 → 查看结果。\n2. 撤销报名：待审核状态下可在「我的报名」中撤销，名额自动释放。\n3. 申请入驻：「我的」→ 申请入驻 → 提交资料 → 平台审核 → 开通发布权限。", Remark: "使用帮助"},
 }
 
-// EnsureSuperAdmin 首次启动时创建超级管理员账号
 func EnsureSuperAdmin() {
 	cfg := config.Get().SuperAdmin
 	if cfg.Username == "" {
@@ -62,7 +60,6 @@ func EnsureSuperAdmin() {
 	logger.Infof("已初始化超级管理员账号：%s / %s，请登录后立即修改密码", cfg.Username, cfg.Password)
 }
 
-// EnsureDefaultConfig 初始化系统配置默认项
 func EnsureDefaultConfig() {
 	for _, item := range defaultConfigs {
 		var count int64
@@ -77,7 +74,6 @@ func EnsureDefaultConfig() {
 	}
 }
 
-// AdminLogin 管理端账号密码登录
 func AdminLogin(req *dto.AdminLoginReq, clientIP string) (*dto.AdminLoginResp, error) {
 	req.Username = validate.Trim(req.Username)
 	if req.Username == "" || req.Password == "" {
@@ -112,7 +108,6 @@ func AdminLogin(req *dto.AdminLoginReq, clientIP string) (*dto.AdminLoginResp, e
 	}, nil
 }
 
-// GetAdminInfo 获取管理员信息
 func GetAdminInfo(id int64) (*dto.AdminInfo, error) {
 	admin := &model.Admin{}
 	if err := model.DB.Where("id = ?", id).First(admin).Error; err != nil {
@@ -121,7 +116,6 @@ func GetAdminInfo(id int64) (*dto.AdminInfo, error) {
 	return BuildAdminInfo(admin), nil
 }
 
-// BuildAdminInfo 组装管理员信息
 func BuildAdminInfo(a *model.Admin) *dto.AdminInfo {
 	perms := make([]string, 0)
 	if a.Permissions != "" {
@@ -144,7 +138,6 @@ func BuildAdminInfo(a *model.Admin) *dto.AdminInfo {
 	}
 }
 
-// ChangeAdminPassword 修改管理员密码
 func ChangeAdminPassword(adminID int64, oldPassword, newPassword string) error {
 	if len(newPassword) < 6 {
 		return errcode.ErrParams.WithMsg("新密码长度不能少于 6 位")
@@ -166,7 +159,6 @@ func ChangeAdminPassword(adminID int64, oldPassword, newPassword string) error {
 	return nil
 }
 
-// AdminList 管理员列表
 func AdminList(q *dto.AdminQuery) ([]dto.AdminInfo, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.Admin{})
@@ -188,7 +180,6 @@ func AdminList(q *dto.AdminQuery) ([]dto.AdminInfo, int64, error) {
 	return items, total, nil
 }
 
-// SaveAdmin 新增或编辑管理员
 func SaveAdmin(operatorRole int8, req *dto.AdminSaveReq) (int64, error) {
 	req.Username = validate.Trim(req.Username)
 	req.Nickname = validate.Trim(req.Nickname)
@@ -271,7 +262,6 @@ func SaveAdmin(operatorRole int8, req *dto.AdminSaveReq) (int64, error) {
 	return admin.ID, nil
 }
 
-// DeleteAdmin 删除管理员（超级管理员不可删除）
 func DeleteAdmin(operatorRole int8, id int64) error {
 	if operatorRole != model.AdminRoleSuper {
 		return errcode.ErrForbid.WithMsg("仅超级管理员可删除账号")
@@ -289,7 +279,6 @@ func DeleteAdmin(operatorRole int8, id int64) error {
 	return nil
 }
 
-// GetConfigMap 读取系统配置（键值对）
 func GetConfigMap() (map[string]string, error) {
 	list := make([]model.SysConfig, 0)
 	if err := model.DB.Find(&list).Error; err != nil {
@@ -299,7 +288,6 @@ func GetConfigMap() (map[string]string, error) {
 	for _, item := range list {
 		result[item.ConfigKey] = item.ConfigValue
 	}
-	// 补充默认配置，防止前台取空
 	for _, item := range defaultConfigs {
 		if _, ok := result[item.ConfigKey]; !ok {
 			result[item.ConfigKey] = item.ConfigValue
@@ -308,7 +296,6 @@ func GetConfigMap() (map[string]string, error) {
 	return result, nil
 }
 
-// SaveConfig 批量保存系统配置
 func SaveConfig(items []dto.ConfigItem) error {
 	for _, item := range items {
 		if item.ConfigKey == "" {
@@ -326,7 +313,6 @@ func SaveConfig(items []dto.ConfigItem) error {
 	return nil
 }
 
-// AdminUserList 后台用户列表
 func AdminUserList(q *dto.UserQuery) ([]dto.AdminUserItem, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.User{})
@@ -369,7 +355,6 @@ func AdminUserList(q *dto.UserQuery) ([]dto.AdminUserItem, int64, error) {
 	return items, total, nil
 }
 
-// ChangeUserStatus 启用 / 禁用用户
 func ChangeUserStatus(adminID int64, adminName string, req *dto.ChangeStatusReq) error {
 	if req.Status != model.UserStatusNormal && req.Status != model.UserStatusDisable {
 		return errcode.ErrParams.WithMsg("状态不合法")
@@ -395,7 +380,6 @@ func ChangeUserStatus(adminID int64, adminName string, req *dto.ChangeStatusReq)
 	return nil
 }
 
-// RecordLog 记录后台操作日志，满足审计与溯源要求
 func RecordLog(adminID int64, adminName, module, action, detail, ip string) {
 	log := &model.OperationLog{
 		AdminID:   adminID,
@@ -410,7 +394,6 @@ func RecordLog(adminID int64, adminName, module, action, detail, ip string) {
 	}
 }
 
-// OperationLogList 操作日志列表
 func OperationLogList(q *dto.AdminQuery) ([]model.OperationLog, int64, error) {
 	page, pageSize := validate.NormalizePage(q.Page, q.PageSize)
 	tx := model.DB.Model(&model.OperationLog{})

@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CORS 跨域中间件
 func CORS() gin.HandlerFunc {
 	origins := config.Get().CORS.AllowOrigins
 	if len(origins) == 0 {
@@ -47,7 +46,6 @@ func CORS() gin.HandlerFunc {
 	}
 }
 
-// visitor 记录单个 IP 的令牌桶状态
 type visitor struct {
 	tokens   float64
 	lastTime time.Time
@@ -58,7 +56,6 @@ var (
 	limitMu  sync.Mutex
 )
 
-// RateLimit 基于令牌桶的单 IP 限流，防止恶意刷屏报名
 func RateLimit() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cfg := config.Get().RateLimit
@@ -86,7 +83,6 @@ func RateLimit() gin.HandlerFunc {
 			return
 		}
 		v.tokens--
-		// 定期清理过期记录，避免内存无限增长
 		if len(visitors) > 10000 {
 			for key, item := range visitors {
 				if time.Since(item.lastTime) > 10*time.Minute {

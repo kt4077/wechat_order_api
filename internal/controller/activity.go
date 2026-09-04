@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListActivities 活动列表（首页 / 我的活动）
 func ListActivities(c *gin.Context) {
 	q, ok := bindQuery[dto.ActivityQuery](c)
 	if !ok {
@@ -23,7 +22,6 @@ func ListActivities(c *gin.Context) {
 	response.Page(c, list, total, q.Page, q.PageSize)
 }
 
-// ActivityDetail 活动详情
 func ActivityDetail(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
@@ -37,7 +35,6 @@ func ActivityDetail(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// CreateActivity 发布活动（需入驻权限）
 func CreateActivity(c *gin.Context) {
 	userID, ok := hasMerchantPermission(c)
 	if !ok {
@@ -56,7 +53,6 @@ func CreateActivity(c *gin.Context) {
 	response.SuccessMsg(c, "活动创建成功", gin.H{"id": id})
 }
 
-// UpdateActivity 编辑活动（仅创建者或平台管理员）
 func UpdateActivity(c *gin.Context) {
 	userID, ok := hasMerchantPermission(c)
 	if !ok {
@@ -79,7 +75,6 @@ func UpdateActivity(c *gin.Context) {
 	response.SuccessMsg(c, "保存成功", gin.H{"id": newID})
 }
 
-// ChangeActivityStatus 上架 / 下架活动
 func ChangeActivityStatus(c *gin.Context) {
 	userID, ok := hasMerchantPermission(c)
 	if !ok {
@@ -101,7 +96,6 @@ func ChangeActivityStatus(c *gin.Context) {
 	response.SuccessMsg(c, "操作成功", nil)
 }
 
-// DeleteActivity 删除活动（软删除）
 func DeleteActivity(c *gin.Context) {
 	userID, ok := hasMerchantPermission(c)
 	if !ok {
@@ -118,7 +112,6 @@ func DeleteActivity(c *gin.Context) {
 	response.SuccessMsg(c, "删除成功", nil)
 }
 
-// CopyActivity 复刻活动
 func CopyActivity(c *gin.Context) {
 	userID, ok := hasMerchantPermission(c)
 	if !ok {
@@ -136,7 +129,6 @@ func CopyActivity(c *gin.Context) {
 	response.SuccessMsg(c, "复刻成功", gin.H{"id": newID})
 }
 
-// ActivityStat 单活动数据统计
 func ActivityStat(c *gin.Context) {
 	id, ok := pathID(c, "id")
 	if !ok {
